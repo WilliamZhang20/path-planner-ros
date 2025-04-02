@@ -1,0 +1,102 @@
+#include "rclcpp/rclcpp.hpp"
+#include "geometry_msgs/msg/twist.hpp"
+#include "nav_msgs/msg/odometry.hpp"
+#include <cmath>
+
+class LimoController : public rclcpp::Node {
+public:
+    LimoController() : Node("limo_controller") {
+        // Creating a publisher to send velocity commands to the robot
+        cmd_vel_publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
+        
+        // Creating a subscriber for position data
+        odom_subscriber_ = this->create_subscription<nav_msgs::msg::Odometry>(
+            "/odom", 10, std::bind(&LimoController::odom_callback, this, std::placeholders::_1));
+        
+        // hardcoding the final position
+        goal_x_ = 1.0;
+        goal_y_ = 1.0;
+        goal_theta_ = 0.0;
+        
+        // Set up a timer to control the robot at a fixed rate (10Hz)
+        timer_ = this->create_wall_timer(std::chrono::milliseconds(100), 
+                                         std::bind(&LimoController::control_loop, this));
+    }
+
+private:
+    // Publisher
+    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_publisher_;
+    
+    // Subscriber
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_subscriber_;
+    
+    // Timer for running the control loop at a fixed interval
+    rclcpp::TimerBase::SharedPtr timer_;
+    
+    // Current robot position
+    double x_, y_, theta_;
+    
+    // Final goal
+    double goal_x_, goal_y_, goal_theta_;
+
+    const double Kp_linear = 0.5;
+    const double Kp_angular = 2.0;
+
+    // Callback function for odometry messages
+    void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg) {
+        x_ = msg->pose.pose.position.x;
+        y_ = msg->pose.pose.position.y;
+
+        // Find theta
+        double qw = msg->pose.pose.orientation.w;
+        double qx = msg->pose.pose.orientation.x;
+        double qy = msg->pose.pose.orientation.y;
+        double qz = msg->pose.pose.orientation.z;
+        theta_ = atan2(2.0 * (qw * qz + qx * qy), 1.0 - 2.0 * (qy * qy + qz * qz));
+    }
+
+    // Main control loop (runs at 10Hz)
+    void control_loop() {
+        // Compute the error in position and orientation
+        double error_x = goal_x_ - x_;
+        double error_y = goal_y_ - y_;
+        double distance_error = std::sqrt(error_x * error_x + error_y * error_y);
+
+        // Compute desired angle to the target
+        double desired_theta = std::atan2(error_y, error_x);
+        double angle_error = desired_theta - theta_;
+
+        // Normalize angle error to be within -pi to pi
+        angle_error = std::atan2(std::sin(angle_error), std::cos(angle_error));
+
+        // Stop condition: If the robot is close enough to the goal
+        if (distance_error < 0.05 && std::fabs(angle_error) < 0.1) {
+            RCLCPP_INFO(this->get_logger(), "Target reached!");
+            publish_velocity(0.0, 0.0);  // Stop the robot
+            return;
+        }
+
+        // Compute control commands using proportional control (P-controller)
+        double linear_velocity = Kp_linear * distance_error;
+        double angular_velocity = Kp_angular * angle_error;
+
+        // Publish velocity commands
+        publish_velocity(linear_velocity, angular_velocity);
+    }
+
+    // Function to publish velocity commands
+    void publish_velocity(double linear, double angular) {
+        auto msg = geometry_msgs::msg::Twist();
+        msg.linear.x = linear;   // Forward/backward motion
+        msg.angular.z = angular; // Rotational motion
+        cmd_vel_publisher_->publish(msg);
+    }
+};
+
+// Entry point for the ROS2 node
+int main(int argc, char **argv) {
+    rclcpp::init(argc, argv);  // Initialize ROS2
+    rclcpp::spin(std::make_shared<LimoController>());  // Run the node
+    rclcpp::shutdown();  // Shutdown ROS2 when the node stops
+    return 0;
+}
