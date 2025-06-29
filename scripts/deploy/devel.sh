@@ -6,7 +6,7 @@ source "$(dirname "$0")/base.sh"
 stop_docker
 
 # declare mode, use gpu by default
-mode="gpu"
+mode="cpu"
 
 # declare sim, use sim by default
 sim="True"
@@ -30,6 +30,8 @@ if [ "$mode" == "gpu" ]; then
     limo_bot:sim bash
 else
     run_docker \
+    -e DISPLAY=$DISPLAY \
+    -v /tmp/.X11-unix:/tmp/.X11-unix \
     -v $(dirname "$0")/../../workspace/:/root/workspace/src \
     limo_bot:sim bash
 fi

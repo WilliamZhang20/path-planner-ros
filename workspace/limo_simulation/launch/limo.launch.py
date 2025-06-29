@@ -22,7 +22,7 @@ def generate_launch_description():
     limobot_path = get_package_share_directory("limo_simulation")
     use_sim_time = LaunchConfiguration("use_sim_time", default=True)
 
-    world_file = LaunchConfiguration("world_file", default = join(limobot_path, "worlds", "empty.sdf"))
+    world_file = LaunchConfiguration("world_file", default = join(limobot_path, "worlds", "room.sdf"))
     gz_sim_share = get_package_share_directory("ros_gz_sim")
 
     gz_sim = IncludeLaunchDescription(

@@ -1,7 +1,20 @@
 # ROS2 humble Base
 FROM ros:humble
 
-RUN apt-get update && apt-get upgrade -y
+RUN apt-get update || true && apt-get install -y curl
+
+RUN rm -f /etc/apt/sources.list.d/ros2.list \
+    /etc/apt/sources.list.d/ros2-latest.list \
+    /etc/apt/sources.list.d/ros-latest.list && \
+    rm -f /usr/share/keyrings/ros2-latest-archive-keyring.gpg \
+    /usr/share/keyrings/ros2-archive-keyring.gpg \
+    /usr/share/keyrings/ros2-latest-archive-keyring.gpg
+
+RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null && \
+    apt-get update # Run apt-get update again after updating the key
+
+RUN apt-get upgrade -y
 
 # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/docker-specialized.html
 ENV NVIDIA_VISIBLE_DEVICES=all
@@ -28,12 +41,32 @@ ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 # Source by default
 RUN echo "source /opt/ros/$ROS_DISTRO/setup.bash" >> /root/.bashrc
 
+USER root
+
 ENV WORKSPACE_PATH=/root/workspace
+
+ENV IGN_RENDERING_API=ogre
+
+RUN apt-get update && apt-get install -y mesa-utils
 
 COPY workspace/ $WORKSPACE_PATH/src/
 
-RUN rosdep update && cd $WORKSPACE_PATH && \
+RUN apt-get install -y ros-humble-xacro
+
+RUN apt-get update && rosdep update && cd $WORKSPACE_PATH && \
     rosdep install --from-paths src -y --ignore-src
+
+RUN apt-get update && apt-get install -y \
+    ros-humble-navigation2 \
+    ros-humble-nav2-bringup \
+    ros-humble-nav2-smac-planner \
+    ros-humble-nav2-dwb-controller \
+    ros-humble-nav2-lifecycle-manager \
+    ros-humble-nav2-amcl \
+    ros-humble-nav2-map-server \
+    ros-humble-nav2-costmap-2d
+
+RUN apt-get update && apt-get install -y x11-apps
 
 COPY scripts/setup/ /root/scripts/setup
 RUN /root/scripts/setup/workspace.sh
