@@ -4,6 +4,8 @@ from os.path import join
 from xacro import parse, process_doc
 
 from launch import LaunchDescription
+
+from launch.actions import TimerAction
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, AppendEnvironmentVariable
 from launch.substitutions import LaunchConfiguration, Command, PythonExpression
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -39,6 +41,7 @@ def generate_launch_description():
         name="robot_state_publisher",
         parameters=[
             {
+                'use_sim_time': use_sim_time,
                 'robot_description':
                     Command(
                         [
@@ -50,17 +53,22 @@ def generate_launch_description():
         ],
     )
 
-    gz_spawn_entity = Node(
-        package="ros_gz_sim",
-        executable="create",
-        arguments=[
-            "-topic", "/robot_description",
-            "-name", "limobot",
-            "-allow_renaming", "true",
-            "-z", "0.3",
-            "-x", "0.0",
-            "-y", "0.0",
-            "-Y", "0.3"
+    gz_spawn_entity = TimerAction(
+        period=3.0,  # wait 3 seconds
+        actions=[
+            Node(
+                package="ros_gz_sim",
+                executable="create",
+                arguments=[
+                    "-topic", "/robot_description",
+                    "-name", "limobot",
+                    "-allow_renaming", "true",
+                    "-z", "0.3",
+                    "-x", "0.0",
+                    "-y", "0.0",
+                    "-Y", "0.3"
+                ]
+            )
         ]
     )
 
@@ -71,11 +79,13 @@ def generate_launch_description():
             "/cmd_vel@geometry_msgs/msg/Twist@ignition.msgs.Twist",
             "/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock",
             "/model/limobot/odometry@nav_msgs/msg/Odometry[ignition.msgs.Odometry",
-            "/world/empty_world/model/limobot/joint_state@sensor_msgs/msg/JointState[ignition.msgs.Model"
+            "/world/empty_world/model/limobot/joint_state@sensor_msgs/msg/JointState[ignition.msgs.Model",
+            "/scan@sensor_msgs/msg/LaserScan@ignition.msgs.LaserScan"
         ],
         remappings=[
             ("/model/limobot/odometry", "/odom"),
             ('/world/empty_world/model/limobot/joint_state', '/joint_states'),
+            ('/model/limobot/scan', '/scan'),
         ]
     )
 

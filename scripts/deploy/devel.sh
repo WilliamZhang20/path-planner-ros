@@ -24,6 +24,8 @@ while getopts 'ch' opt; do
 done
 shift "$(($OPTIND -1))"
 
+export GAZEBO_PLUGIN_PATH="${GAZEBO_PLUGIN_PATH}:/opt/ros/humble/lib/gazebo/plugins"
+
 if [ "$mode" == "gpu" ]; then
     run_docker --runtime=nvidia \
     -v $(dirname "$0")/../../workspace/:/root/workspace/src \

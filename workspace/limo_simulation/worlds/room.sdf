@@ -117,22 +117,7 @@
       </link>
     </model>
 
-    <!-- Obstacle Boxes -->
     <model name="box1">
-      <static>true</static>
-      <pose>-2 -1 0.5 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>1 1 1</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>1 1 1</size></box></geometry>
-          <material><ambient>0.5 0.1 0.1 1</ambient></material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="box2">
       <static>true</static>
       <pose>2 2 0.5 0 0 0</pose>
       <link name="link">
@@ -146,21 +131,7 @@
       </link>
     </model>
 
-    <model name="box3">
-      <static>true</static>
-      <pose>0 0 0.5 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>1 1 1</size></box></geometry>
-        </collision>
-        <visual name="visual">
-          <geometry><box><size>1 1 1</size></box></geometry>
-          <material><ambient>0.1 0.1 0.5 1</ambient></material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="box4">
+    <model name="box2">
       <static>true</static>
       <pose>-3 3 0.5 0 0 0</pose>
       <link name="link">
@@ -174,7 +145,7 @@
       </link>
     </model>
 
-    <model name="box5">
+    <model name="box3">
       <static>true</static>
       <pose>3 -3 0.5 0 0 0</pose>
       <link name="link">

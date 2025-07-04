@@ -56,6 +56,8 @@ RUN apt-get install -y ros-humble-xacro
 RUN apt-get update && rosdep update && cd $WORKSPACE_PATH && \
     rosdep install --from-paths src -y --ignore-src
 
+RUN apt install ros-humble-teleop-twist-keyboard
+
 RUN apt-get update && apt-get install -y \
     ros-humble-navigation2 \
     ros-humble-nav2-bringup \
@@ -67,6 +69,8 @@ RUN apt-get update && apt-get install -y \
     ros-humble-nav2-costmap-2d
 
 RUN apt-get update && apt-get install -y x11-apps
+
+RUN apt install -y ros-humble-gazebo-ros-pkgs
 
 COPY scripts/setup/ /root/scripts/setup
 RUN /root/scripts/setup/workspace.sh
